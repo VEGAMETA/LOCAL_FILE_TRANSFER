@@ -55,104 +55,129 @@ class FileTransfer(sg.Window):
             event, values = self.read()
 
             if event == sg.WIN_CLOSED:
-                self.server_thread = None
-                self.client_server.close_connection()
-                self.close()
-                exit(0)
+                self.shutdown()
 
             elif event == "Add file":
-                filename = pathlib.Path(
-                    sg.popup_get_file("Will not see this message", no_window=True)
-                )
-                if filename in self.selected_files:
-                    sg.popup_error("Filename in the list already")
-                    continue
-                self.selected_files.append(filename)
-                self["files"].update(values=[file.name for file in self.selected_files])
+                self.add_file()
 
             elif event == "Del file":
-                for file in self.selected_files:
-                    if file.name == values.get("files")[0]:
-                        self.selected_files.remove(file)
-                        break
-                self["files"].update(values=[file.name for file in self.selected_files])
+                self.del_file(values.get("files"))
 
             elif event == "Add ip":
-                layout = [
-                    [sg.Text("Name:\t\t"), sg.Input(key="-NAME-")],
-                    [sg.Text("IP Address:\t"), sg.Input(key="-IP-")],
-                    [sg.Button("Submit", key="-SUBMIT-")],
-                ]
-                window = sg.Window(
-                    "Enter Name and IP",
-                    layout,
-                    return_keyboard_events=True,
-                    finalize=True,
-                )
-                window["-SUBMIT-"].bind("<Return>", "submit")
-                while True:
-                    event, values = window.read()
-                    if event == sg.WINDOW_CLOSED:
-                        break
-                    elif event in ("-SUBMIT-", "\r"):
-                        name = values["-NAME-"]
-                        ip = values["-IP-"]
-                        pattern = r"^(\d{1,3}\.){3}\d{1,3}$"
-                        if not name:
-                            sg.popup_error("Name hasn't been entered")
-                        if re.match(pattern, ip) is not None:
-                            self.available_ips.append({"name": name, "ip": ip})
-                            window.close()
-                            self["ips"].update(
-                                values=[host.get("name") for host in self.available_ips]
-                            )
-                            with open("ips.txt", "w") as f:
-                                for host in self.available_ips:
-                                    f.write(f"{host.get('ip')} {host.get('name')}\n")
-                            break
-                        else:
-                            sg.popup_error("Invalid IP")
+                self.add_ip()
 
             elif event == "Del ip":
-                for ip in self.available_ips:
-                    if ip.get("name") == values.get("ips")[0]:
-                        self.available_ips.remove(ip)
-                        self["ips"].update(
-                            values=[host.get("name") for host in self.available_ips]
-                        )
-                        with open("ips.txt", "w") as f:
-                            for host in self.available_ips:
-                                f.write(f"{host.get('ip')} {host.get('name')}\n")
-                        break
+                self.del_ip(values.get("ips"))
 
             elif event == "Send":
-                if not values.get("ips"):
-                    sg.popup_error("Ip hasn't been chosen")
-                    continue
-                elif not self.selected_files:
-                    sg.popup_error("Files hasn't been chosen")
-                    continue
-                else:
-                    for host in self.available_ips:
-                        if values.get("ips")[0] == host.get("name"):
-                            ip = host.get("ip")
-                            break
-                    else:
-                        continue
-                try:
-                    asyncio.run(self.client_server.send_files(ip, self.selected_files))
-                except Exception as e:
-                    sg.popup_error(f"Error sending files: {str(e)}")
+                self.send_files(values.get("ips"))
 
             elif event == "Receive":
-                if values.get("Receive"):
-                    self.server_thread = threading.Thread(
-                        target=asyncio.run, args=(self.client_server.open_connection(),)
+                self.recieve_files(values.get("Receive"))
+
+    def shutdown(self):
+        self.server_thread = None
+        self.client_server.close_connection()
+        self.close()
+        exit(0)
+
+    def add_file(self):
+        filename = pathlib.Path(
+            sg.popup_get_file("Will not see this message", no_window=True)
+        )
+        if filename in self.selected_files:
+            sg.popup_error("Filename in the list already")
+            return
+        self.selected_files.append(filename)
+        self["files"].update(values=[file.name for file in self.selected_files])
+
+    def del_file(self, files):
+        if not files:
+            return
+        for file in self.selected_files:
+            if file.name == files[0]:
+                self.selected_files.remove(file)
+                self["files"].update(values=[file.name for file in self.selected_files])
+                return
+
+    def add_ip(self):
+        layout = [
+            [sg.Text("Name:\t\t"), sg.Input(key="-NAME-")],
+            [sg.Text("IP Address:\t"), sg.Input(key="-IP-")],
+            [sg.Button("Submit", key="-SUBMIT-")],
+        ]
+        window = sg.Window(
+            "Enter Name and IP",
+            layout,
+            return_keyboard_events=True,
+            finalize=True,
+        )
+        window["-SUBMIT-"].bind("<Return>", "submit")
+        while True:
+            event, values = window.read()
+            if event == sg.WINDOW_CLOSED:
+                break
+            elif event in ("-SUBMIT-", "\r"):
+                name = values["-NAME-"]
+                ip = values["-IP-"]
+                pattern = r"^(\d{1,3}\.){3}\d{1,3}$"
+                if not name:
+                    sg.popup_error("Name hasn't been entered")
+                if re.match(pattern, ip) is not None:
+                    self.available_ips.append({"name": name, "ip": ip})
+                    window.close()
+                    self["ips"].update(
+                        values=[host.get("name") for host in self.available_ips]
                     )
-                    self.server_thread.start()
+                    with open("ips.txt", "w") as f:
+                        for host in self.available_ips:
+                            f.write(f"{host.get('ip')} {host.get('name')}\n")
+                    break
                 else:
-                    self.server_thread = None
-                    self.client_server.close_connection()
+                    sg.popup_error("Invalid IP")
+
+    def del_ip(self, names):
+        if not names:
+            return
+        for ip in self.available_ips:
+            if names[0] == ip.get("name"):
+                self.available_ips.remove(ip)
+                self["ips"].update(
+                    values=[host.get("name") for host in self.available_ips]
+                )
+                with open("ips.txt", "w") as f:
+                    for host in self.available_ips:
+                        f.write(f"{host.get('ip')} {host.get('name')}\n")
+                break
+
+    def send_files(self, names):
+        if not names:
+            sg.popup_error("Ip hasn't been chosen")
+            return
+        elif not self.selected_files:
+            sg.popup_error("Files hasn't been chosen")
+            return
+        else:
+            for host in self.available_ips:
+                if names[0] == host.get("name"):
+                    ip = host.get("ip")
+                    break
+            else:
+                return
+        try:
+            asyncio.run(self.client_server.send_files(ip, self.selected_files))
+        except Exception as e:
+            sg.popup_error(f"Error sending files: {str(e)}")
+
+    def recieve_files(self, recieve):
+        if recieve:
+            self.server_thread = threading.Thread(
+                target=asyncio.run, args=(self.client_server.open_connection(),)
+            )
+            self.server_thread.start()
+        else:
+            self.server_thread = None
+            self.client_server.close_connection()
 
     def get_ips(self):
         with open("ips.txt", "r") as f:
