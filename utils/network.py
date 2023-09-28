@@ -18,6 +18,8 @@ class ClientServer:
             client.settimeout(3)
             client.connect((ip, self.PORT))
 
+            client.send(str(len(selected_files)).encode("utf-8"))
+
             for file in selected_files:
                 client.send(file.name.encode("utf-8"))
                 with open(file, "rb") as f:
@@ -36,8 +38,13 @@ class ClientServer:
         while True:
             try:
                 client_socket, _ = self.server.accept()
-                filename = client_socket.recv(1024).decode("utf-8")
-                self.handle_file_transfer(client_socket, filename)
+                files_amount = client_socket.recv(1024).decode("utf-8")
+                filenames = []
+                for _ in range(int(files_amount)):
+                    filename = client_socket.recv(1024).decode("utf-8")
+                    filenames.append(filename)
+                    self.handle_file_transfer(client_socket, filename)
+                gui.popup_files_recieved.PopupFileRecieved(filename)
             except (KeyboardInterrupt, OSError) as e:
                 break
 
@@ -55,7 +62,6 @@ class ClientServer:
                 while data:
                     file.write(data)
                     data = client_socket.recv(1024)
-                gui.popup_files_recieved.PopupFileRecieved(filename)
 
         except Exception as e:
             print(f"Error handling file transfer: {str(e)}")

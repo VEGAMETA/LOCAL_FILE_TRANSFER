@@ -1,15 +1,14 @@
 import PySimpleGUI as sg
 import utils.explorer
+import utils.config
 
 
 class PopupFileRecieved(sg.Window):
-    def __init__(self, filename):
-        self.filename = filename
-
+    def __init__(self):
         layout = [
             [sg.Text("File Recieved")],
             [sg.Button("OK", key="-OK-")],
-            [sg.Button("Open in explorer", key="-OPEN-")],
+            [sg.Button("Open downloads folder in explorer", key="-OPEN-")],
         ]
 
         super().__init__("Operation completed", layout=layout, finalize=True)
@@ -24,4 +23,4 @@ class PopupFileRecieved(sg.Window):
             if event in (sg.WINDOW_CLOSED, "-OK-", "\r"):
                 break
             elif event == "-OPEN-":
-                utils.explorer.open_explorer(self.filename.parent)
+                utils.explorer.open_explorer(utils.config.downloads_folder)
