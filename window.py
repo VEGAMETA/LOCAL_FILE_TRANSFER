@@ -42,7 +42,10 @@ class FileTransfer(sg.Window):
                 sg.Button("Send", size=(64, 3)),
             ],
         ]
-        super().__init__("File transfer", layout, finalize=True)
+        super().__init__(
+            "File transfer", layout, return_keyboard_events=True, finalize=True
+        )
+        self["Send"].bind("<Return>", "_SUBMIT_")
         self.client_server = network.ClientServer()
         self.server_thread = None
         self.main_loop()
@@ -51,7 +54,7 @@ class FileTransfer(sg.Window):
         while True:
             event, values = self.read()
 
-            if event == sg.WIN_CLOSED or event == "Cancel":
+            if event == sg.WIN_CLOSED:
                 self.server_thread = None
                 self.client_server.close_connection()
                 self.close()
@@ -78,15 +81,20 @@ class FileTransfer(sg.Window):
                 layout = [
                     [sg.Text("Name:\t\t"), sg.Input(key="-NAME-")],
                     [sg.Text("IP Address:\t"), sg.Input(key="-IP-")],
-                    [sg.Button("Submit")],
+                    [sg.Button("Submit", key="-SUBMIT-")],
                 ]
-                window = sg.Window("Enter Name and IP", layout)
-
+                window = sg.Window(
+                    "Enter Name and IP",
+                    layout,
+                    return_keyboard_events=True,
+                    finalize=True,
+                )
+                window["-SUBMIT-"].bind("<Return>", "submit")
                 while True:
                     event, values = window.read()
                     if event == sg.WINDOW_CLOSED:
                         break
-                    elif event == "Submit":
+                    elif event in ("-SUBMIT-", "\r"):
                         name = values["-NAME-"]
                         ip = values["-IP-"]
                         pattern = r"^(\d{1,3}\.){3}\d{1,3}$"
