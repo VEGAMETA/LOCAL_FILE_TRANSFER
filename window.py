@@ -49,6 +49,8 @@ class FileTransfer(sg.Window):
             event, values = self.read()
 
             if event == sg.WIN_CLOSED or event == "Cancel":
+                self.server_thread = None
+                await self.client_server.close_connection()
                 exit(0)
 
             elif event == "Add file":

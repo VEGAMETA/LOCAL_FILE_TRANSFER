@@ -35,6 +35,7 @@ class ClientServer:
     async def send_files(self, ip, selected_files):
         if selected_files and ip:
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            client.settimeout(3)
             client.connect((ip, self.PORT))
 
             for file in selected_files:
