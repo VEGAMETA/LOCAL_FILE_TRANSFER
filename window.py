@@ -5,7 +5,7 @@ import threading
 import PySimpleGUI as sg
 
 
-class FileTransferer(sg.Window):
+class FileTransfer(sg.Window):
     def __init__(self):
         self.selected_files = []
         self.available_ips = []

@@ -1,4 +1,4 @@
 import window
 
-if __name__ == '__main__':
-    window.FileTransferer()
+if __name__ == "__main__":
+    window.FileTransfer()
