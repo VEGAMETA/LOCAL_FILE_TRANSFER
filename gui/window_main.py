@@ -9,7 +9,7 @@ import utils.network as network
 sg.theme(config.theme)
 
 
-class FileTransfer(sg.Window):
+class MainWindow(sg.Window):
     def __init__(self):
         self.selected_files = []
         self.available_ips = self.get_ips()
