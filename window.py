@@ -1,3 +1,4 @@
+import time
 import asyncio
 import network
 import pathlib
@@ -38,11 +39,8 @@ class FileTransfer(sg.Window):
         super().__init__("File transfer", layout, finalize=True)
         self.client_server = network.ClientServer()
         self.server_thread = None
-        asyncio.run(self.run())
-        self.close()
-
-    async def run(self):
-        await asyncio.gather(self.update_ips(), self.main_loop())
+        threading.Thread(target=self.update_ips, daemon=True).start()
+        asyncio.run(self.main_loop())
 
     async def main_loop(self):
         while True:
@@ -51,6 +49,7 @@ class FileTransfer(sg.Window):
             if event == sg.WIN_CLOSED or event == "Cancel":
                 self.server_thread = None
                 await self.client_server.close_connection()
+                self.close()
                 exit(0)
 
             elif event == "Add file":
@@ -99,13 +98,14 @@ class FileTransfer(sg.Window):
                     self.server_thread = None
                     await self.client_server.close_connection()
 
-    async def update_ips(self):
+    def update_ips(self):
         while True:
             try:
                 self.available_ips = self.client_server.get_ips()
                 values = [host.get("name") for host in self.available_ips]
                 self["ips"].update(values=values)
-                await asyncio.sleep(1)
+                print(values)
             except sg.tk.TclError as e:
                 print(f"Error updating ips: {str(e)}")
-                break
+            # wait for 1 second
+            time.sleep(1)
