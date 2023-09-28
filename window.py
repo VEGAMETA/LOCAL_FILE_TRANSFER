@@ -77,7 +77,7 @@ class FileTransfer(sg.Window):
                     continue
                 else:
                     for host in self.available_ips:
-                        if host.get("name") == values.get("ips")[0]:
+                        if values.get("ips")[0] == host.get("name"):
                             ip = host.get("ip")
                             break
                     else:
@@ -101,10 +101,7 @@ class FileTransfer(sg.Window):
         while True:
             try:
                 self.available_ips = self.client_server.get_ips()
-                values = [
-                    f"{host.get('name')} - {host.get('ip')}"
-                    for host in self.available_ips
-                ]
+                values = [host.get("name") for host in self.available_ips]
                 self["ips"].update(values=values)
                 await asyncio.sleep(1)
             except sg.tk.TclError as e:
