@@ -66,6 +66,7 @@ class ClientServer:
                 print(f"Error handling file transfer: {str(e)}")
                 break
 
+    # TODO: duplicate handling, popup with open downloads file
     def handle_file_transfer(self, client_socket, filename):
         try:
             data = client_socket.recv(1024)
