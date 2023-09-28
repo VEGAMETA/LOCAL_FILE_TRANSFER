@@ -44,7 +44,7 @@ class ClientServer:
                     filename = client_socket.recv(1024).decode("utf-8")
                     filenames.append(filename)
                     self.handle_file_transfer(client_socket, filename)
-                gui.popup_files_recieved.PopupFileRecieved(filename)
+                gui.popup_files_recieved.PopupFileRecieved()
             except (KeyboardInterrupt, OSError) as e:
                 break
 
