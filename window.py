@@ -10,6 +10,7 @@ class FileTransfer(sg.Window):
     def __init__(self):
         self.selected_files = []
         self.available_ips = []
+
         layout = [
             [
                 sg.Text("Files", size=(32, 1)),
@@ -40,15 +41,15 @@ class FileTransfer(sg.Window):
         self.client_server = network.ClientServer()
         self.server_thread = None
         threading.Thread(target=self.update_ips, daemon=True).start()
-        asyncio.run(self.main_loop())
+        self.main_loop()
 
-    async def main_loop(self):
+    def main_loop(self):
         while True:
             event, values = self.read()
 
             if event == sg.WIN_CLOSED or event == "Cancel":
                 self.server_thread = None
-                await self.client_server.close_connection()
+                self.client_server.close_connection()
                 self.close()
                 exit(0)
 
@@ -84,7 +85,7 @@ class FileTransfer(sg.Window):
                     else:
                         continue
                 try:
-                    await self.client_server.send_files(ip, self.selected_files)
+                    asyncio.run(self.client_server.send_files(ip, self.selected_files))
                 except Exception as e:
                     sg.popup_error(f"Error sending files: {str(e)}")
 
@@ -96,16 +97,15 @@ class FileTransfer(sg.Window):
                     self.server_thread.start()
                 else:
                     self.server_thread = None
-                    await self.client_server.close_connection()
+                    self.client_server.close_connection()
 
     def update_ips(self):
         while True:
+            time.sleep(1)
             try:
                 self.available_ips = self.client_server.get_ips()
-                values = [host.get("name") for host in self.available_ips]
-                self["ips"].update(values=values)
-                print(values)
+                self["ips"].update(
+                    values=[host.get("name") for host in self.available_ips]
+                )
             except sg.tk.TclError as e:
                 print(f"Error updating ips: {str(e)}")
-            # wait for 1 second
-            time.sleep(1)

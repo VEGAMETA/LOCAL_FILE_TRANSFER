@@ -14,7 +14,9 @@ class ClientServer:
         local_ips = []
 
         try:
-            arp_result = subprocess.check_output(["arp", "-a"], universal_newlines=True)
+            arp_result = subprocess.check_output(
+                ["arp", "-a"], universal_newlines=True, shell=True
+            )
             lines = arp_result.split("\n")
             for line in lines:
                 parts = line.split()
@@ -79,7 +81,7 @@ class ClientServer:
         except Exception as e:
             print(f"Error handling file transfer: {str(e)}")
 
-    async def close_connection(self):
+    def close_connection(self):
         if self.server:
             self.server.close()
             self.server = None
