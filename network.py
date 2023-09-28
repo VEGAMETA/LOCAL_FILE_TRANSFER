@@ -1,13 +1,14 @@
 import socket
-import subprocess
 import typing
+import config
+import subprocess
 
 
 class ClientServer:
     def __init__(self):
         self.server: typing.Optional[socket.socket] = None
-        self.PORT = 23091
-        self.downloads_folder = "D:/Downloads/"
+        self.PORT = config.PORT
+        self.downloads_folder = config.downloads_folder
 
     @staticmethod
     def get_ips():

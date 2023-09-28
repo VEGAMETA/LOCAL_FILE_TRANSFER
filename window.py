@@ -1,10 +1,12 @@
 import re
-import time
+import config
 import asyncio
 import network
 import pathlib
 import threading
 import PySimpleGUI as sg
+
+sg.theme(config.theme)
 
 
 class FileTransfer(sg.Window):
@@ -45,6 +47,7 @@ class FileTransfer(sg.Window):
         super().__init__(
             "File transfer", layout, return_keyboard_events=True, finalize=True
         )
+
         self["Send"].bind("<Return>", "_SUBMIT_")
         self.client_server = network.ClientServer()
         self.server_thread = None
@@ -166,6 +169,7 @@ class FileTransfer(sg.Window):
                 return
         try:
             asyncio.run(self.client_server.send_files(ip, self.selected_files))
+            sg.popup("Files sent")
         except Exception as e:
             sg.popup_error(f"Error sending files: {str(e)}")
 
