@@ -119,11 +119,9 @@ class MainWindow(sg.Window):
 
     def send_files(self, names):
         if not names:
-            sg.popup_error("Ip hasn't been chosen")
-            return
+            return sg.popup_error("Ip hasn't been chosen")
         elif not self.selected_files:
-            sg.popup_error("Files hasn't been chosen")
-            return
+            return sg.popup_error("Files hasn't been chosen")
         else:
             for host in self.available_ips:
                 if names[0] == host.get("name"):
