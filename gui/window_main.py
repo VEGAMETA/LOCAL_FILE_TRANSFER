@@ -1,10 +1,10 @@
-import re
-import config
-import asyncio
-import network
 import pathlib
+import asyncio
+import gui.popup_ip
 import threading
 import PySimpleGUI as sg
+import utils.config as config
+import utils.network as network
 
 sg.theme(config.theme)
 
@@ -67,7 +67,7 @@ class FileTransfer(sg.Window):
                 self.del_file(values.get("files"))
 
             elif event == "Add ip":
-                self.add_ip()
+                gui.popup_ip.PopupIP(self.available_ips, self["ips"])
 
             elif event == "Del ip":
                 self.del_ip(values.get("ips"))
@@ -103,42 +103,6 @@ class FileTransfer(sg.Window):
                 self["files"].update(values=[file.name for file in self.selected_files])
                 return
 
-    def add_ip(self):
-        layout = [
-            [sg.Text("Name:\t\t"), sg.Input(key="-NAME-")],
-            [sg.Text("IP Address:\t"), sg.Input(key="-IP-")],
-            [sg.Button("Submit", key="-SUBMIT-")],
-        ]
-        window = sg.Window(
-            "Enter Name and IP",
-            layout,
-            return_keyboard_events=True,
-            finalize=True,
-        )
-        window["-SUBMIT-"].bind("<Return>", "submit")
-        while True:
-            event, values = window.read()
-            if event == sg.WINDOW_CLOSED:
-                break
-            elif event in ("-SUBMIT-", "\r"):
-                name = values["-NAME-"]
-                ip = values["-IP-"]
-                pattern = r"^(\d{1,3}\.){3}\d{1,3}$"
-                if not name:
-                    sg.popup_error("Name hasn't been entered")
-                if re.match(pattern, ip) is not None:
-                    self.available_ips.append({"name": name, "ip": ip})
-                    window.close()
-                    self["ips"].update(
-                        values=[host.get("name") for host in self.available_ips]
-                    )
-                    with open("ips.txt", "w") as f:
-                        for host in self.available_ips:
-                            f.write(f"{host.get('ip')} {host.get('name')}\n")
-                    break
-                else:
-                    sg.popup_error("Invalid IP")
-
     def del_ip(self, names):
         if not names:
             return
@@ -169,7 +133,7 @@ class FileTransfer(sg.Window):
                 return
         try:
             asyncio.run(self.client_server.send_files(ip, self.selected_files))
-            sg.popup("Files sent")
+            sg.popup("File(s) sent")
         except Exception as e:
             sg.popup_error(f"Error sending files: {str(e)}")
 

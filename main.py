@@ -1,4 +1,4 @@
-import window
+import gui.window_main
 
 if __name__ == "__main__":
-    window.FileTransfer()
+    gui.window_main.FileTransfer()

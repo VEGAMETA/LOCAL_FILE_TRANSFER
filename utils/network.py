@@ -1,39 +1,16 @@
 import socket
 import typing
-import config
-import subprocess
+import pathlib
+import utils.config
+import gui.popup_files_recieved
+import gui.popup_duplicate_handler
 
 
 class ClientServer:
     def __init__(self):
         self.server: typing.Optional[socket.socket] = None
-        self.PORT = config.PORT
-        self.downloads_folder = config.downloads_folder
-
-    @staticmethod
-    def get_ips():
-        local_ips = []
-
-        try:
-            arp_result = subprocess.check_output(
-                ["arp", "-a"], universal_newlines=True, shell=True
-            )
-            lines = arp_result.split("\n")
-            for line in lines:
-                parts = line.split()
-                if (
-                    len(parts) >= 2
-                    and parts[0].startswith("192")
-                    and parts[0] not in ("192.168.1.255", "192.168.1.1")
-                ):
-                    ip_address = parts[0]
-                    local_ips.append(
-                        {"name": socket.gethostbyaddr(ip_address)[0], "ip": ip_address}
-                    )
-        except subprocess.CalledProcessError:
-            pass
-
-        return list(local_ips)
+        self.PORT = utils.config.PORT
+        self.downloads_folder = utils.config.downloads_folder
 
     async def send_files(self, ip, selected_files):
         if selected_files and ip:
@@ -54,7 +31,6 @@ class ClientServer:
     async def open_connection(self):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.bind(("0.0.0.0", self.PORT))
-        print("Server started")
         self.server.listen(5)
 
         while True:
@@ -63,22 +39,23 @@ class ClientServer:
                 filename = client_socket.recv(1024).decode("utf-8")
                 self.handle_file_transfer(client_socket, filename)
             except (KeyboardInterrupt, OSError) as e:
-                print(f"Error handling file transfer: {str(e)}")
                 break
 
-    # TODO: duplicate handling, popup with open downloads file
     def handle_file_transfer(self, client_socket, filename):
         try:
             data = client_socket.recv(1024)
             if not data:
                 return
 
-            filename = self.downloads_folder + filename
+            filename = pathlib.Path(self.downloads_folder + filename)
+            if pathlib.Path.exists(filename):
+                filename = gui.popup_duplicate_handler.PopupFileCollision(filename)
 
             with open(filename, "wb") as file:
                 while data:
                     file.write(data)
                     data = client_socket.recv(1024)
+                gui.popup_files_recieved.PopupFileRecieved(filename)
 
         except Exception as e:
             print(f"Error handling file transfer: {str(e)}")
@@ -87,4 +64,3 @@ class ClientServer:
         if self.server:
             self.server.close()
             self.server = None
-            print("Server closed")
